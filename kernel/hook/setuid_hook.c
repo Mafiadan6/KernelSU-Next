@@ -46,7 +46,10 @@ static inline bool is_zygote_normal_app_uid(uid_t uid)
 
 extern u32 susfs_zygote_sid;
 extern struct cred *ksu_cred;
-extern struct work_struct susfs_extra_works;
+
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+extern void susfs_run_sus_path_loop(uid_t uid);
+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 
 struct susfs_handle_setuid_tw {
     struct callback_head cb;
@@ -64,11 +67,6 @@ static void susfs_handle_setuid_tw_func(struct callback_head *cb)
 static void ksu_handle_extra_susfs_work(void)
 {
     struct susfs_handle_setuid_tw *tw = kzalloc(sizeof(*tw), GFP_ATOMIC);
-
-    if (work_pending(&susfs_extra_works))
-        return;
-
-    schedule_work(&susfs_extra_works);
 
     if (!tw) {
         pr_err("susfs: No enough memory\n");
@@ -181,7 +179,7 @@ do_umount:
 #endif // #ifndef CONFIG_KSU_SUSFS_TRY_UMOUNT
 
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
-    //susfs_run_sus_path_loop(new_uid);
+    susfs_run_sus_path_loop(new_uid);
 #endif // #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 
 #ifdef CONFIG_KSU_SUSFS
